@@ -1,2 +1,2 @@
 
-void ed(){}
+#include "editor.cpp"

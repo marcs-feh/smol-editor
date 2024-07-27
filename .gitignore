@@ -4,3 +4,4 @@
 *.lib
 .ninja_*
 __pycache__
+smol-editor

@@ -7,6 +7,6 @@ rule compile
 rule build-exe
   command = $cxx -o $out $in $ldflags
 
-build core/core.o: compile core/lib.cc | core/slice.cpp core/lib.cc
-build edit/edit.o: compile edit/lib.cpp | edit/lib.cpp edit/editor.hh
-build ./smol-editor: build-exe ./main.cc core/core.o edit/edit.o | buildgen.py ./main.cc
+build core/core.o: compile core/lib.cpp | core/core.hpp core/types.hpp core/lib.cpp core/slice.hpp core/assert.cpp
+build edit/edit.o: compile edit/lib.cpp | edit/lib.cpp edit/editor.cpp
+build ./smol-editor: build-exe ./main.cpp core/core.o edit/edit.o | buildgen.py ./main.cpp
