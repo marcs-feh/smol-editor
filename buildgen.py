@@ -7,8 +7,10 @@ from dataclasses import dataclass
 
 # -------- Config --------
 cc = 'clang++'
-cflags = ('-O1', '-fPIC')
-packages = ['.', 'edit']
+cflags = ['-O1', '-fPIC']
+ldflags = []
+packages = ['.', 'edit', 'some_utility']
+exec_name = 'editor'
 # ------------------------
 
 # Note about "Packages", C++ does **not** have real packages, this is a
@@ -36,43 +38,79 @@ def is_cpp_source(s: str) -> bool:
 class Package:
     path : str
     files : list[str]
-    kind : str # 'exec' or 'lib'
+    kind : str # 'exec' | 'obj'
     translation_unit : str
 
+    requires : list # List of Package's that are directly used in building
+    uses : list     # Package artifacts that are needed, but not used directly in building
+
+    def require(self, p):
+        self.requires.append(p)
+        return self
+
+    def use(self, p):
+        self.uses.append(p)
+        return self
+
+    def artifact(self):
+        bin_name = path.basename(self.path)
+        if self.path == '.':
+            bin_name = path.basename(path.abspath(self.path))
+
+        if platform.system() == 'Windows':
+            bin_name += '.obj' if self.kind == 'obj' else '.exe'
+        else:
+            bin_name += '.o' if self.kind == 'obj' else ''
+
+        return bin_name
+
     def __init__(self, root: str):
+        self.requires = []
+        self.uses = []
         entries = os.listdir(root)
         entries = filter(lambda e: is_cpp_source(e) or is_header(e), entries)
+
         self.path = root
         self.files = list(entries)
         for e in self.files:
             if e.startswith('lib.') and is_cpp_source(e):
-                self.kind = 'lib'
+                self.kind = 'obj'
                 self.translation_unit = e
             elif e.startswith('main.') and is_cpp_source(e):
                 self.kind = 'exec'
                 self.translation_unit = e
 
-        if self.kind != 'lib' and self.kind != 'exec':
+        if self.kind != 'obj' and self.kind != 'exec':
             raise Exception(f'Invalid package kind {self.kind}')
 
 def generate_ninja(pkg: Package):
     lines = []
-    if pkg.kind == 'lib':
-        line = ''
-        bin_name = path.basename(pkg.path)
-        if platform.system() == 'Windows':
-            bin_name += '.obj'
-        else:
-            bin_name += '.o'
-
-        line += f'build {path.join(pkg.path, bin_name)}: compile {path.join(pkg.path, pkg.translation_unit)}'
+    if pkg.kind == 'obj':
+        line = f'build {path.join(pkg.path, pkg.artifact())}: compile {path.join(pkg.path, pkg.translation_unit)}'
         filepaths = [path.join(pkg.path, f) for f in pkg.files]
         deps = ' '.join(filepaths)
         line += ' | ' + deps
         lines.append(line)
+    elif pkg.kind == 'exec':
+        line = f'build {path.join(pkg.path, pkg.artifact())}: build-exe {path.join(pkg.path, pkg.translation_unit)}'
+
+        req_files = [path.join(req.path, req.artifact()) for req in pkg.requires]
+        used_files = [path.join(used.path, used.artifact()) for used in pkg.uses]
+
+        line += ' ' + ' '.join(req_files)
+        filepaths = [path.join(pkg.path, f) for f in pkg.files]
+        deps = ' '.join(filepaths)
+        line += ' | ' + deps + ' ' + ' '.join(used_files)
+        lines.append(line)
+    else:
+        raise Exception(f'Invalid package kind {pkg.kind}')
 
     return '\n'.join(lines)
 
 packages = list(map(lambda p: Package(p), packages))
+[print(p) for p in packages]
+
+packages[0].require(packages[1]).use(packages[2])
+
 for pkg in packages:
     print(generate_ninja(pkg))
