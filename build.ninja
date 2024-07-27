@@ -1,0 +1,12 @@
+cxx = clang
+cflags = -O2 -fPIC
+ldflags = ""
+
+rule compile
+  command = $cxx -c $cflags -o $out $in
+
+rule build-exe
+  command = $cxx -o $out $in $ldflags
+
+build edit/edit.o: compile edit/lib.cpp | edit/lib.cpp edit/editor.hh
+
