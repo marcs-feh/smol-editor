@@ -23,4 +23,13 @@ void bounds_check(bool pred);
 
 void panic(cstring msg);
 
+[[noreturn]]
+void unimplemented();
+
+template<typename A, typename B = A>
+struct Pair {
+	A a;
+	B b;
+};
+
 }

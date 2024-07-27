@@ -32,6 +32,11 @@ void panic(cstring msg){
 	do { abort(); } while(true);
 }
 
+[[noreturn]]
+void unimplemented(){
+	fprintf(stderr, "Unimplemented code.");
+	do { abort(); } while(true);
+}
 
 }
 

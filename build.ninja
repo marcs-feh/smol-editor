@@ -1,12 +1,15 @@
 cxx = clang++
-cflags = -O1 -fPIC -pipe -fno-strict-aliasing -Icore -Iedit -I.
-ldflags = -L. -Lcore -Ledit -L.
+cflags = -O1 -fPIC -pipe -fno-strict-aliasing
+ldflags = -L/home/marcos/projects/smol-editor/core -L/home/marcos/projects/smol-editor/edit -L/home/marcos/projects/smol-editor/terminal -L/home/marcos/projects/smol-editor/.
+
+incflags = -I/home/marcos/projects/smol-editor
 
 rule compile
-  command = $cxx -c $cflags -o $out $in
+  command = $cxx -c $cflags -o $out $in $incflags
 rule build-exe
-  command = $cxx -o $out $in $ldflags
+  command = $cxx -o $out $in $cflags $ldflags $incflags
 
 build core/core.o: compile core/lib.cpp | core/core.hpp core/types.hpp core/lib.cpp core/slice.hpp core/assert.cpp
 build edit/edit.o: compile edit/lib.cpp | edit/lib.cpp edit/editor.cpp
-build ./smol-editor: build-exe ./main.cpp core/core.o edit/edit.o | buildgen.py ./main.cpp
+build terminal/terminal.o: compile terminal/lib.cpp | terminal/lib.cpp terminal/terminal.hpp terminal/term_linux.cpp terminal/sequences.hpp
+build ./smol-editor: build-exe ./main.cpp core/core.o edit/edit.o terminal/terminal.o | buildgen.py ./main.cpp

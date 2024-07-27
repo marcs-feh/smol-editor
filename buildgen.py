@@ -7,28 +7,30 @@ from platform import system as system_name
 # -------- Config --------
 cc = 'clang++'
 cflags = ['-O1', '-fPIC', '-pipe', '-fno-strict-aliasing']
-ldflags = ['-L.']
-packages = ['core', 'edit']
+packages = ['core', 'edit', 'terminal']
 exec_name = 'editor'
+ldflags = []
+incflags = []
 
 output = 'build.ninja'
 # ------- Build ---------
 def main():
-    global packages, cflags, ldflags, exec_name, output
+    global packages, cflags, ldflags, exec_name, output, incflags
     packages.append('.')
     packages = { p: Package(p) for p in packages }
 
-    cflags += [f'-I{p.path}' for p in packages.values()]
-    ldflags += [f'-L{p.path}' for p in packages.values()]
+    incflags.append(f'-I{path.join(path.abspath("."))}')
+    ldflags += [f'-L{path.join(path.abspath("."), p.path)}' for p in packages.values()]
 
     (packages['.']
         .require(packages['core'])
         .require(packages['edit'])
+        .require(packages['terminal'])
         .use_file('buildgen.py'))
 
     b_written = 0
     with open('build.ninja', 'w') as f:
-        b_written += f.write(ninja_header(cc, cflags, ldflags) + '\n')
+        b_written += f.write(ninja_header(cc, cflags, ldflags, incflags) + '\n')
         build_steps = ''
         for _, pkg in packages.items():
             build_steps += generate_ninja(pkg) + '\n'
@@ -124,15 +126,16 @@ def lines(*args):
         buf.append(str(a))
     return '\n'.join(buf)
 
-def ninja_header(cc, cflags, ldflags):
+def ninja_header(cc, cflags, ldflags, incflags):
     return lines(
         f'cxx = {cc}',
         f'cflags = {" ".join(cflags)}',
         f'ldflags = {" ".join(ldflags)}\n',
+        f'incflags = {" ".join(incflags)}\n',
         'rule compile',
-        '  command = $cxx -c $cflags -o $out $in',
+        '  command = $cxx -c $cflags -o $out $in $incflags',
         'rule build-exe',
-        '  command = $cxx -o $out $in $ldflags\n',
+        '  command = $cxx -o $out $in $cflags $ldflags $incflags\n',
     )
 
 def generate_ninja(pkg: Package):
