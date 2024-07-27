@@ -8,8 +8,7 @@ rule compile
 rule build-exe
   command = $cxx -o $out $in $ldflags
 
-
 build ./smol-editor: build-exe ./main.cc edit/edit.o | ./main.cc some_utility/some_utility
 build edit/edit.o: compile edit/lib.cpp | edit/lib.cpp edit/editor.hh
-build some_utility/some_utility: build-exe some_utility/main.cc  | some_utility/main.cc 
-
+build some_utility/some_utility: build-exe some_utility/main.cc  | some_utility/main.cc
+#--------------

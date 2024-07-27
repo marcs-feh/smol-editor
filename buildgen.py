@@ -8,19 +8,16 @@ from dataclasses import dataclass
 # -------- Config --------
 cc = 'clang++'
 cflags = ['-O1', '-fPIC']
-ldflags = []
-packages = ['.', 'edit', 'some_utility']
+ldflags = ['-L.']
+packages = ['edit', 'some_utility'] # . is implictly included
 exec_name = 'editor'
-# ------------------------
 
-# Note about "Packages", C++ does **not** have real packages, this is a
-# convention I made up for making unity builds easier, a "package" is a
-# directory, it is treated as an executable if it has a `main.cpp` file and as
-# a library if it has a `lib.cpp` file. This is the *only* compiled translation
-# unit for that package. The point of this is to allow for basic modularization
-# and platform specif abstraction without having to buy into some crazy and
-# gargantuan build system, this is a limited approach on purpose. When
-# compiling, the -I and -L flag automatically include the package directory.
+def pre_build():
+    pass
+
+def post_build():
+    pass
+# ------------------------
 
 def is_header(s: str) -> bool:
     s = s.strip().lower()
@@ -45,6 +42,8 @@ class Package:
     uses : list     # Package artifacts that are needed, but not used directly in building
 
     def require(self, p):
+        if self.kind == 'obj':
+            raise Exception(f'Packages of type obj cannot require artifacts')
         self.requires.append(p)
         return self
 
@@ -83,13 +82,33 @@ class Package:
         if self.kind != 'obj' and self.kind != 'exec':
             raise Exception(f'Invalid package kind {self.kind}')
 
+def lines(*args):
+    buf = []
+    for a in args:
+        buf.append(str(a))
+    return '\n'.join(buf)
+
+NINJA_HEADER = lines(
+    f'cxx = {cc}',
+    f'cflags = {" ".join(cflags)}',
+    f'ldflags = {" ".join(ldflags)}\n',
+    'rule compile',
+    '  command = $cxx -c $cflags -o $out $in',
+    'rule build-exe',
+    '  command = $cxx -o $out $in $ldflags\n',
+)
+
 def generate_ninja(pkg: Package):
     lines = []
     if pkg.kind == 'obj':
         line = f'build {path.join(pkg.path, pkg.artifact())}: compile {path.join(pkg.path, pkg.translation_unit)}'
+
+        used_files = [path.join(used.path, used.artifact()) for used in pkg.uses]
+
         filepaths = [path.join(pkg.path, f) for f in pkg.files]
         deps = ' '.join(filepaths)
         line += ' | ' + deps
+
         lines.append(line)
     elif pkg.kind == 'exec':
         line = f'build {path.join(pkg.path, pkg.artifact())}: build-exe {path.join(pkg.path, pkg.translation_unit)}'
@@ -98,19 +117,38 @@ def generate_ninja(pkg: Package):
         used_files = [path.join(used.path, used.artifact()) for used in pkg.uses]
 
         line += ' ' + ' '.join(req_files)
+
         filepaths = [path.join(pkg.path, f) for f in pkg.files]
         deps = ' '.join(filepaths)
         line += ' | ' + deps + ' ' + ' '.join(used_files)
+
         lines.append(line)
     else:
         raise Exception(f'Invalid package kind {pkg.kind}')
 
-    return '\n'.join(lines)
+    return '\n'.join(map(lambda l: l.strip(), lines))
 
-packages = list(map(lambda p: Package(p), packages))
-[print(p) for p in packages]
+def main():
+    global packages
+    packages.append('.')
 
-packages[0].require(packages[1]).use(packages[2])
+    pdict = {}
+    for p in packages:
+        pdict[p] = Package(p)
+    packages = pdict
 
-for pkg in packages:
-    print(generate_ninja(pkg))
+    print(NINJA_HEADER)
+    for _, pkg in packages.items():
+        print(generate_ninja(pkg))
+
+
+# Note about "Packages", C++ does **not** have real packages, this is a
+# convention I made up for making unity builds easier, a "package" is a
+# directory, it is treated as an executable if it has a `main.cpp` file and as
+# a library if it has a `lib.cpp` file. This is the *only* compiled translation
+# unit for that package. The point of this is to allow for basic modularization
+# and platform specif abstraction without having to buy into some crazy and
+# gargantuan build system, this is a limited approach on purpose. When
+# compiling, the -I and -L flag automatically include the package directory.
+
+if __name__ == '__main__': main()
