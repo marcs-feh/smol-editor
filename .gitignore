@@ -3,3 +3,4 @@
 *.obj
 *.lib
 .ninja_log
+__pycache__

@@ -1,14 +1,12 @@
-cxx = clang
-cflags = -O2 -fPIC
-ldflags =
+cxx = clang++
+cflags = -O1 -fPIC -pipe -fno-strict-aliasing -Icore -Iedit -I.
+ldflags = -L. -Lcore -Ledit -L.
 
 rule compile
   command = $cxx -c $cflags -o $out $in
-
 rule build-exe
   command = $cxx -o $out $in $ldflags
 
-build ./smol-editor: build-exe ./main.cc edit/edit.o | ./main.cc some_utility/some_utility
+build core/core.o: compile core/lib.cc | core/slice.cpp core/lib.cc
 build edit/edit.o: compile edit/lib.cpp | edit/lib.cpp edit/editor.hh
-build some_utility/some_utility: build-exe some_utility/main.cc  | some_utility/main.cc
-#--------------
+build ./smol-editor: build-exe ./main.cc core/core.o edit/edit.o | buildgen.py ./main.cc
