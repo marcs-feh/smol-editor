@@ -5,7 +5,7 @@
 
 namespace x {
 
-using AssertionError = Error;
+struct AssertionError : public Error { AssertionError(cstring msg):Error(msg){} };
 
 #ifdef NO_BOUNDS_CHECKING
 constexpr
@@ -24,6 +24,7 @@ void assert_expr(bool pred, cstring msg){
 	}
 }
 
+[[noreturn]]
 void panic(cstring msg){
 	std::fprintf(stderr, "Panic: %s", msg);
 	do { std::abort(); } while(true);
