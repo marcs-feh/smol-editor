@@ -6,7 +6,5 @@ using namespace x;
 
 int main(){
 	Test::run("Slice", [](Test& T){
-		T.expect(1 - 1 == 2);
-		T.print("%d", 69);
 	});
 }
