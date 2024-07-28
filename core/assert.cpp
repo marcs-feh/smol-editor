@@ -5,7 +5,13 @@
 
 namespace x {
 
-struct AssertionError : public Error { AssertionError(cstring msg):Error(msg){} };
+struct AssertionError : Error {
+	AssertionError(cstring msg) : Error(msg){}
+};
+
+struct BoundsCheckError : Error {
+	BoundsCheckError(cstring msg) : Error(msg){}
+};
 
 #ifdef NO_BOUNDS_CHECKING
 constexpr
@@ -13,7 +19,7 @@ void bounds_check(bool pred){ (void)pred; }
 #else
 void bounds_check(bool pred){
 	if(!pred){
-		throw AssertionError("Bounds check failed");
+		throw BoundsCheckError("Bounds check failed");
 	}
 }
 #endif

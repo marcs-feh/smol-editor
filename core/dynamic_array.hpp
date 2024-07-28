@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.hpp"
+#include <new>
 
 namespace x {
 
@@ -10,7 +11,7 @@ struct DynArray {
 	isize capacity;
 	isize length;
 
-	void append(T const& v){}
+	// void append(T const& v){}
 };
 
 }

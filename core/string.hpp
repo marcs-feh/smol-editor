@@ -4,6 +4,6 @@
 
 namespace x {
 struct String {
-	Slice<byte> data;
 };
+
 }

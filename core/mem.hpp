@@ -20,7 +20,9 @@ T align_forward(T val, T align){
 
 void mem_set(void* p, byte val, isize n);
 
-void mem_copy(void* dest, void* src, isize n);
+void mem_copy(void* dest, void const* src, isize n);
+
+void mem_copy_no_overlap(void* dest, void const* src, isize n);
 
 template<typename T, typename ...Args>
 T* construct(void* loc, Args&& ...args){
