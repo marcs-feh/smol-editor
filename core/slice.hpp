@@ -43,6 +43,18 @@ struct Slice {
 };
 
 template<typename T>
+bool slice_equal(Slice<T> a, Slice<T> b){
+	if(a.length != b.length){ return false; }
+
+	for(isize i = 0; i < a.length; i += 1){
+		if(a[i] != b[i]){ return false; }
+	}
+
+	return true;
+}
+
+
+template<typename T>
 Slice<T> make_slice(isize n){
 	T* data = new T[n];
 	return Slice<T>::from_pointer(data, n);
