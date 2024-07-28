@@ -1,41 +1,36 @@
-#pragma once
-
-#include "core.hpp"
-
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
+
+#include "assert.hpp"
 
 namespace x {
 
 #ifdef NO_BOUNDS_CHECKING
 constexpr
-void bounds_check(bool pred){
-	(void)pred;
-}
+void bounds_check(bool pred){ (void)pred; }
 #else
-
 void bounds_check(bool pred){
 	if(!pred){
-		throw AssertionFailure("Bounds check failed");
+		throw Error("Bounds check failed");
 	}
 }
 #endif
 
 void assert_expr(bool pred, cstring msg){
 	if(!pred){
-		throw AssertionFailure(msg);
+		throw Error(msg);
 	}
 }
 
 void panic(cstring msg){
-	fprintf(stderr, "Panic: %s", msg);
-	do { abort(); } while(true);
+	std::fprintf(stderr, "Panic: %s", msg);
+	do { std::abort(); } while(true);
 }
 
 [[noreturn]]
 void unimplemented(){
-	fprintf(stderr, "Unimplemented code.");
-	do { abort(); } while(true);
+	std::fprintf(stderr, "Unimplemented code.");
+	do { std::abort(); } while(true);
 }
 
 }

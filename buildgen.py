@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from platform import system as system_name
 
 # -------- Config --------
-cc = 'clang++'
-cflags = ['-O1', '-fPIC', '-pipe', '-fno-strict-aliasing']
+cc = 'g++'
+cflags = ['-std=c++17', '-O1', '-fPIC', '-pipe', '-fno-strict-aliasing', '-Wall', '-Wextra']
 packages = ['core', 'edit', 'terminal']
 exec_name = 'editor'
 ldflags = []
@@ -19,7 +19,7 @@ def main():
     packages.append('.')
     packages = { p: Package(p) for p in packages }
 
-    incflags.append(f'-I{path.join(path.abspath("."))}')
+    incflags += [f'-I{path.join(path.abspath(p.path))}' for p in packages.values()]
     ldflags += [f'-L{path.join(path.abspath("."), p.path)}' for p in packages.values()]
 
     (packages['.']
@@ -28,15 +28,15 @@ def main():
         .require(packages['terminal'])
         .use_file('buildgen.py'))
 
+    print(f'Found packages:')
     b_written = 0
     with open('build.ninja', 'w') as f:
         b_written += f.write(ninja_header(cc, cflags, ldflags, incflags) + '\n')
         build_steps = ''
-        for _, pkg in packages.items():
+        for name, pkg in packages.items():
+            if name != '.': print(f'* {name}')
             build_steps += generate_ninja(pkg) + '\n'
         b_written += f.write(build_steps)
-
-    print(f'Packages: {len(packages)}')
     print(f'Output File: {output} [Wrote {round(b_written / 1024, 2)}KiB]')
 # ---------------------
 

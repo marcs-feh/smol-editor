@@ -13,10 +13,8 @@ int main(){
 		auto [w, h] = term::get_dimensions();
 		term::set_cursor(0, 0);
 		printf("[%dx%d] %d", w, h, n);
-		// putc(0, stdout);
-		if(n < 100){
-			term::set_cursor(0, n);
-		}
+
+		term::set_cursor(n, n);
 
 		n++;
 		term::flush();

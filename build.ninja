@@ -1,15 +1,15 @@
-cxx = clang++
-cflags = -O1 -fPIC -pipe -fno-strict-aliasing
+cxx = g++
+cflags = -std=c++17 -O1 -fPIC -pipe -fno-strict-aliasing -Wall -Wextra
 ldflags = -L/home/marcos/projects/smol-editor/core -L/home/marcos/projects/smol-editor/edit -L/home/marcos/projects/smol-editor/terminal -L/home/marcos/projects/smol-editor/.
 
-incflags = -I/home/marcos/projects/smol-editor
+incflags = -I/home/marcos/projects/smol-editor/core -I/home/marcos/projects/smol-editor/edit -I/home/marcos/projects/smol-editor/terminal -I/home/marcos/projects/smol-editor
 
 rule compile
   command = $cxx -c $cflags -o $out $in $incflags
 rule build-exe
   command = $cxx -o $out $in $cflags $ldflags $incflags
 
-build core/core.o: compile core/lib.cpp | core/core.hpp core/types.hpp core/lib.cpp core/slice.hpp core/assert.cpp
-build edit/edit.o: compile edit/lib.cpp | edit/lib.cpp edit/editor.cpp
-build terminal/terminal.o: compile terminal/lib.cpp | terminal/lib.cpp terminal/terminal.hpp terminal/term_linux.cpp terminal/sequences.hpp
-build ./smol-editor: build-exe ./main.cpp core/core.o edit/edit.o terminal/terminal.o | buildgen.py ./main.cpp
+build core/core.o: compile core/lib.cpp | core/assert.cpp core/core.hpp core/lib.cpp core/slice.hpp core/types.hpp core/string.cpp core/string.hpp core/dynamic_array.hpp core/mem.cpp
+build edit/edit.o: compile edit/lib.cpp | edit/lib.cpp
+build terminal/terminal.o: compile terminal/lib.cpp | terminal/lib.cpp terminal/sequences.hpp terminal/term_linux.cpp terminal/terminal.hpp
+build ./smol-editor: build-exe ./main.cpp core/core.o edit/edit.o terminal/terminal.o | buildgen.py ./main.cpp ./assert.hpp ./mem.hpp

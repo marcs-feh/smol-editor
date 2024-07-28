@@ -6,6 +6,7 @@ namespace term {
 
 enum class TermError {
 	Raw_Mode_Fail = 1,
+	Get_Dimensions_Fail,
 };
 
 enum class Direction : u8 {
