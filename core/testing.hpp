@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.hpp"
+#include <thread>
 #include <cstdio>
 
 namespace x {
@@ -13,10 +14,19 @@ struct Test {
 	i32 failed = 0;
 	i32 total = 0;
 
-	bool expect(bool pred, cstring msg = ""){
+	template<typename ...Rest>
+	void print(cstring fmt, Rest&& ... rest){
+		std::printf("  > ", title);
+		std::printf(fmt, rest...);
+		std::printf("\n");
+	}
+
+	bool expect(bool pred, cstring msg = nullptr){
 		if(!pred){
 			failed += 1;
-			std::printf("Fail: %s\n", msg);
+			if(msg != nullptr) {
+				std::printf("Fail: %s\n", msg);
+			}
 		}
 		total += 1;
 		return pred;
@@ -30,8 +40,8 @@ struct Test {
 
 	static bool run(cstring title, TestFunc fn){
 		auto T = Test(title);
-		fn(T);
 		T.report();
+		fn(T);
 		return T.failed == 0;
 	}
 
