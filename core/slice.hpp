@@ -4,30 +4,36 @@
 #include "assert.hpp"
 
 namespace x {
+
 template<typename T>
 struct Slice {
 	T* data = nullptr;
 	isize length = 0;
 
+	constexpr
 	T& operator[](isize idx){
 		bounds_check(idx > 0 && idx < length);
 		return data[idx];
 	}
 
+	constexpr
 	T const& operator[](isize idx) const {
 		bounds_check(idx > 0 && idx < length);
 		return data[idx];
 	}
 
+	constexpr
 	Slice<T> sub(isize start, isize end) {
 		bounds_check(start >= 0 && end >= 0 && end <= length && start <= end);
 		return Slice<T>::from_pointer(data + start, end - start);
 	}
 
+	constexpr
 	bool empty() const {
 		return length == 0 || data == nullptr;
 	}
 
+	constexpr
 	static Slice<T> from_pointer(T* data, isize length){
 		Slice<T> s;
 		s.data = data;

@@ -1,11 +1,11 @@
-#include "core/core.hpp"
 #include "terminal/terminal.hpp"
+#include "core/assert.hpp"
 #include <cstdio>
 #include <unistd.h>
 #include <thread>
 
+
 int main(){
-	x::assert_expr(false, "");
 	term::enable_raw_mode();
 	int n = 0;
 	while(true){

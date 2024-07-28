@@ -1,6 +1,7 @@
 #pragma once
 
-#include "core/core.hpp"
+#include "core/types.hpp"
+#include "core/utility.hpp"
 
 namespace term {
 

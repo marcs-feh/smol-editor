@@ -3,7 +3,6 @@
 #include "terminal.hpp"
 #include "sequences.hpp"
 
-#include "core/core.hpp"
 #include <cstdio>
 #include <termios.h>
 #include <unistd.h>

@@ -1,8 +1,9 @@
 #pragma once
 
-#include "core/core.hpp"
+#include "core/types.hpp"
 
 namespace term {
+
 // TODO: Replace with array
 constexpr byte CSI[] = "\e[";
 constexpr byte clear_screen[] = "\e[2J\e[3J";
