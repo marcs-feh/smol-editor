@@ -5,20 +5,22 @@
 
 namespace x {
 
+using AssertionError = Error;
+
 #ifdef NO_BOUNDS_CHECKING
 constexpr
 void bounds_check(bool pred){ (void)pred; }
 #else
 void bounds_check(bool pred){
 	if(!pred){
-		throw Error("Bounds check failed");
+		throw AssertionError("Bounds check failed");
 	}
 }
 #endif
 
 void assert_expr(bool pred, cstring msg){
 	if(!pred){
-		throw Error(msg);
+		throw AssertionError(msg);
 	}
 }
 

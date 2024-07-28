@@ -5,6 +5,7 @@
 #include <thread>
 
 int main(){
+	x::assert_expr(false, "");
 	term::enable_raw_mode();
 	int n = 0;
 	while(true){

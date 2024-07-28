@@ -27,6 +27,20 @@ using usize = size_t;
 
 using uintptr = uintptr_t;
 
+// Basic generic error interface
+struct Error {
+	cstring msg = "";
+
+	constexpr
+	cstring info() const {
+		return msg;
+	}
+
+	constexpr
+	Error(cstring msg) : msg{msg}{}
+};
+
+
 static_assert(sizeof(isize) == sizeof(usize), "Mismatched size types");
 static_assert(sizeof(f32) == 4 && sizeof(f64) == 8, "Non standard float types");
 static_assert(sizeof(complex64) == 8 && sizeof(complex128) == 16, "Non standard complex types");
