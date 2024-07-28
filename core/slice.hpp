@@ -12,13 +12,13 @@ struct Slice {
 
 	constexpr
 	T& operator[](isize idx){
-		bounds_check(idx > 0 && idx < length);
+		bounds_check(idx >= 0 && idx < length);
 		return data[idx];
 	}
 
 	constexpr
 	T const& operator[](isize idx) const {
-		bounds_check(idx > 0 && idx < length);
+		bounds_check(idx >= 0 && idx < length);
 		return data[idx];
 	}
 

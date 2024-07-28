@@ -11,13 +11,13 @@ struct Array {
 
 	constexpr
 	T& operator[](isize idx){
-		bounds_check(idx > 0 && idx < N);
+		bounds_check(idx >= 0 && idx < N);
 		return data[idx];
 	}
 
 	constexpr
 	T const& operator[](isize idx) const {
-		bounds_check(idx > 0 && idx < N);
+		bounds_check(idx >= 0 && idx < N);
 		return data[idx];
 	}
 };

@@ -5,7 +5,7 @@
 namespace x {
 void bounds_check(bool pred);
 
-void assert_expr(bool pred, cstring msg);
+void assert_expr(bool pred, cstring msg = "");
 
 [[noreturn]]
 void panic(cstring msg);

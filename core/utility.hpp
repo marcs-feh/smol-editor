@@ -42,5 +42,12 @@ T max(T a, T b, Args&& ...args){
 	}
 }
 
+template<typename T>
+constexpr
+T clamp(T lo, T x, T hi){
+	return min(max(x, lo), hi);
+}
+
+
 }
 
