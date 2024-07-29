@@ -6,3 +6,4 @@ Containerfile
 .ninja_*
 __pycache__
 smol-editor
+gap_buffer/gap_buffer
