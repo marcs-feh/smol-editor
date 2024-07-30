@@ -2,6 +2,9 @@ package gap_buffer
 
 import "core:fmt"
 import "core:mem"
+import "core:unicode/utf8"
+
+// TODO: OOB Checks?
 
 Buffer_Error :: union #shared_nil {
 	mem.Allocator_Error,
@@ -49,14 +52,48 @@ from_raw_position :: proc(buf: Gap_Buffer, r: int) -> int {
 	return r - (gap_size(buf) if r < buf.gap_start else 0)
 }
 
-gap_grow :: proc(buf: ^Gap_Buffer, size: int) -> Buffer_Error {
+gap_resize :: proc(buf: ^Gap_Buffer, size: int) -> (err: Buffer_Error) {
+	// assert(size >= MIN_GAP, "Gap is too small")
+	pre, post := buffer_pieces(buf^)
+	new_data := make([]byte, len(pre) + len(post) + size) or_return
+
+	 #no_bounds_check {
+		mem.copy_non_overlapping(&new_data[0], raw_data(pre), len(pre))
+		mem.copy_non_overlapping(&new_data[len(pre)], raw_data(post), len(post))
+	 }
+
+	delete(buf.data)
+
+	buf.gap_start = len(pre) + len(post)
+	buf.gap_end = len(new_data)
+	buf.data = new_data
+
+	return
+}
+
+insert_text :: proc {
+	insert_text_bytes,
+	insert_text_string,
+	insert_rune,
+}
+
+insert_text_bytes :: proc(buf: ^Gap_Buffer, pos: int, text: []byte) -> Buffer_Error {
+	if len(text) >= gap_size(buf^) {
+		gap_resize(buf, len(text) + MIN_GAP) or_return
+	}
 	unimplemented()
 }
 
-insert_text :: proc(buf: ^Gap_Buffer, pos: int) -> Buffer_Error {
-	unimplemented()
+insert_text_string :: proc(buf: ^Gap_Buffer, pos: int, text: string) -> Buffer_Error {
+	return insert_text_bytes(buf, pos, transmute([]byte)text)
 }
 
+insert_rune :: proc(buf: ^Gap_Buffer, pos: int, r: rune) -> Buffer_Error {
+	b, n := utf8.encode_rune(r)
+	return insert_text_bytes(buf, pos, b[:n])
+}
+
+// Move the start of the gap to pos, note that pos is a raw offset in the buffer.
 gap_move :: proc(buf: ^Gap_Buffer, pos: int){
 	if pos == buf.gap_start { return }
 	region_to_save, region_freed : []byte
