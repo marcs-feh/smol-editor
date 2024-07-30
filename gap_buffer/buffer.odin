@@ -1,5 +1,6 @@
 package gap_buffer
 
+import "core:fmt"
 import "core:mem"
 
 Buffer_Error :: union #shared_nil {
@@ -15,7 +16,7 @@ Gap_Buffer :: struct {
 }
 
 buffer_make :: proc(gap: int, allocator := context.allocator) -> (buf: Gap_Buffer, err: Buffer_Error){
-	assert(gap > MIN_GAP, "Gap is too small")
+	assert(gap >= MIN_GAP, "Gap is too small")
 	data := make([]byte, gap, allocator) or_return
 	buf.data = data
 	buf.gap_end = len(data)
@@ -53,17 +54,42 @@ gap_grow :: proc(buf: ^Gap_Buffer, size: int) -> Buffer_Error {
 }
 
 insert_text :: proc(buf: ^Gap_Buffer, pos: int) -> Buffer_Error {
+	unimplemented()
 }
 
 gap_move :: proc(buf: ^Gap_Buffer, pos: int){
-	pos := to_raw_position(buf^, pos)
 	if pos == buf.gap_start { return }
 
+	delta := pos - buf.gap_start
 	if pos < buf.gap_start {
+		region_to_save := buf.data[buf.gap_start + delta:buf.gap_start]
+		region_freed := buf.data[buf.gap_end + delta:buf.gap_end]
+
+		assert(len(region_freed) == abs(delta) && len(region_to_save) == abs(delta))
+		mem.copy(raw_data(region_freed), raw_data(region_to_save), abs(delta))
+
+		buf.gap_start = pos
+		buf.gap_end += delta
 	}
 	else {
+		if buf.gap_end + delta > len(buf.data) { fmt.println("NOT MOVING", buf.gap_end, buf.gap_end + delta, len(buf.data)); return }
+
+		region_to_save := buf.data[buf.gap_end:buf.gap_end + delta]
+		region_freed := buf.data[buf.gap_start:buf.gap_start + delta]
+
+		assert(len(region_freed) == abs(delta) && len(region_to_save) == abs(delta))
+		mem.copy(raw_data(region_freed), raw_data(region_to_save), abs(delta))
+
+		buf.gap_start = pos
+		buf.gap_end += delta
+
 	}
+	assert(buf.gap_start < len(buf.data) && buf.gap_end <= len(buf.data))
 }
 
-MIN_GAP :: 32
+MIN_GAP :: 8
 
+
+// fmt.println(buf.gap_end - delta, ":", buf.gap_end, "->", len(buf.data[buf.gap_end - delta:buf.gap_end]))
+// fmt.println(pos, ":", buf.gap_start, "->", len(buf.data[pos:buf.gap_start]))
+// fmt.println("Delta ->", delta)
