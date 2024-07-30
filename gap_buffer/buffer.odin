@@ -15,29 +15,38 @@ Gap_Buffer :: struct {
 	gap_start: int,
 	gap_end: int,
 
+	line_starts: [dynamic]int,
+
 	allocator: mem.Allocator,
 }
 
+// Create a gap buffer, the buffer will use the provided allocator for its own operations
 buffer_make :: proc(gap: int, allocator := context.allocator) -> (buf: Gap_Buffer, err: Buffer_Error){
 	assert(gap >= MIN_GAP, "Gap is too small")
 	data := make([]byte, gap, allocator) or_return
+	defer if err != nil { delete(data, allocator) }
+	buf.line_starts, err = make([dynamic]int, allocator=allocator)
 	buf.data = data
 	buf.gap_end = len(data)
 	buf.allocator = allocator
 	return
 }
 
+// Destroy buffer using its own allocator
 buffer_destroy :: proc(buf: ^Gap_Buffer){
 	delete(buf.data, buf.allocator)
+	delete(buf.line_starts)
 	buf.gap_end, buf.gap_end = 0, 0
 }
 
+// Get the date before and after the gap
 buffer_pieces :: proc(buf: Gap_Buffer) -> (pre, post: []byte){
 	pre, post = buf.data[:buf.gap_start], buf.data[buf.gap_end:]
 	return
 }
 
-gap_size :: proc(buf: Gap_Buffer) -> int {
+// Get buffer's gap size
+gap_size :: #force_inline proc "contextless" (buf: Gap_Buffer) -> int {
 	return buf.gap_end - buf.gap_start
 }
 
@@ -52,17 +61,18 @@ from_raw_position :: proc(buf: Gap_Buffer, r: int) -> int {
 	return r - (gap_size(buf) if r < buf.gap_start else 0)
 }
 
+// Resize gap, moves it to the end
 gap_resize :: proc(buf: ^Gap_Buffer, size: int) -> (err: Buffer_Error) {
 	// assert(size >= MIN_GAP, "Gap is too small")
 	pre, post := buffer_pieces(buf^)
-	new_data := make([]byte, len(pre) + len(post) + size) or_return
+	new_data := make([]byte, len(pre) + len(post) + size, buf.allocator) or_return
 
 	 #no_bounds_check {
 		mem.copy_non_overlapping(&new_data[0], raw_data(pre), len(pre))
 		mem.copy_non_overlapping(&new_data[len(pre)], raw_data(post), len(post))
 	 }
 
-	delete(buf.data)
+	delete(buf.data, buf.allocator)
 
 	buf.gap_start = len(pre) + len(post)
 	buf.gap_end = len(new_data)
