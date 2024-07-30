@@ -59,37 +59,24 @@ insert_text :: proc(buf: ^Gap_Buffer, pos: int) -> Buffer_Error {
 
 gap_move :: proc(buf: ^Gap_Buffer, pos: int){
 	if pos == buf.gap_start { return }
-
+	region_to_save, region_freed : []byte
 	delta := pos - buf.gap_start
+
 	if pos < buf.gap_start {
-		region_to_save := buf.data[buf.gap_start + delta:buf.gap_start]
-		region_freed := buf.data[buf.gap_end + delta:buf.gap_end]
-
-		assert(len(region_freed) == abs(delta) && len(region_to_save) == abs(delta))
-		mem.copy(raw_data(region_freed), raw_data(region_to_save), abs(delta))
-
-		buf.gap_start = pos
-		buf.gap_end += delta
+		region_to_save = buf.data[buf.gap_start + delta:buf.gap_start]
+		region_freed   = buf.data[buf.gap_end + delta:buf.gap_end]
+	} else {
+		region_to_save = buf.data[buf.gap_end:buf.gap_end + delta]
+		region_freed   = buf.data[buf.gap_start:buf.gap_start + delta]
 	}
-	else {
-		if buf.gap_end + delta > len(buf.data) { fmt.println("NOT MOVING", buf.gap_end, buf.gap_end + delta, len(buf.data)); return }
 
-		region_to_save := buf.data[buf.gap_end:buf.gap_end + delta]
-		region_freed := buf.data[buf.gap_start:buf.gap_start + delta]
+	mem.copy(raw_data(region_freed), raw_data(region_to_save), abs(delta))
+	buf.gap_start = pos
+	buf.gap_end += delta
 
-		assert(len(region_freed) == abs(delta) && len(region_to_save) == abs(delta))
-		mem.copy(raw_data(region_freed), raw_data(region_to_save), abs(delta))
-
-		buf.gap_start = pos
-		buf.gap_end += delta
-
-	}
+	assert(len(region_freed) == abs(delta) && len(region_to_save) == abs(delta))
 	assert(buf.gap_start < len(buf.data) && buf.gap_end <= len(buf.data))
 }
 
 MIN_GAP :: 8
 
-
-// fmt.println(buf.gap_end - delta, ":", buf.gap_end, "->", len(buf.data[buf.gap_end - delta:buf.gap_end]))
-// fmt.println(pos, ":", buf.gap_start, "->", len(buf.data[pos:buf.gap_start]))
-// fmt.println("Delta ->", delta)
