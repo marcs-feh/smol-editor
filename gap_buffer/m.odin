@@ -5,35 +5,33 @@ import "core:mem"
 
 buffer_display :: proc(buf: Gap_Buffer){
 	pre, post := buffer_pieces(buf)
+	fmt.printfln("Gap(%v) [% 3d, % 3d]:", gap_size(buf), buf.gap_start, buf.gap_end)
+	fmt.printfln("Lines: %v", buf.line_starts[:])
+
 	fmt.print(string(pre))
 	for n in 0..<len(buf.data) - (len(post) + len(pre)) {
 		fmt.print("~")
 	}
 	fmt.println(string(post))
+	fmt.println("-----------------")
 }
 
 
 main :: proc(){
-	buf, _ := buffer_make(8)
+	buf, _ := buffer_make(MIN_GAP)
 	defer buffer_destroy(&buf)
 
-	msg := "Hello"
-	buf.gap_start += len(msg)
-
-	mem.copy(raw_data(buf.data), raw_data(string(msg)), len(msg))
-
-	for n := 5; n >= 0; n -= 1 {
-		gap_move(&buf, n)
-		buffer_display(buf)
-	}
-	for n in 0..<6 {
-		gap_move(&buf, n)
-		buffer_display(buf)
-	}
-
-	gap_resize(&buf, 0)
+	insert_text(&buf, 0, "Hello")
 	buffer_display(buf)
 
-	gap_resize(&buf, 20)
+	insert_text(&buf, text_size(buf), " world")
 	buffer_display(buf)
+
+	insert_text(&buf, 5, ",")
+	buffer_display(buf)
+
+	insert_text(&buf, text_size(buf), "!")
+	buffer_display(buf)
+
+	// fmt.println(buffer_build_string(buf))
 }
