@@ -33,5 +33,5 @@ main :: proc(){
 	insert_text(&buf, text_size(buf), "!")
 	buffer_display(buf)
 
-	// fmt.println(buffer_build_string(buf))
+	fmt.println(buffer_build_string(buf))
 }

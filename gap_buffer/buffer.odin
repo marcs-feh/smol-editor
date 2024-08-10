@@ -7,17 +7,28 @@ import "core:unicode/utf8"
 
 MIN_GAP :: 8
 
+// Virtual byte position into a string, does not take into consideration the
+// gap, this is used for most of the Public functions
+Pos :: int
+
+// Raw byte offset from the start of the buffer, this is mainly for private
+// usage or buffer memory manipulation
+Offset :: distinct int
+
 // TODO: OOB Checks?
 Buffer_Error :: union #shared_nil {
 	mem.Allocator_Error,
+	enum byte {
+		Out_Of_Bounds,
+	},
 }
 
 Gap_Buffer :: struct {
 	data: []byte,
-	gap_start: int,
-	gap_end: int,
+	gap_start: Offset,
+	gap_end: Offset,
 
-	line_starts: [dynamic]int,
+	line_starts: [dynamic]Pos,
 
 	allocator: mem.Allocator,
 }
@@ -29,7 +40,7 @@ buffer_make :: proc(gap: int, allocator := context.allocator) -> (buf: Gap_Buffe
 	defer if err != nil { delete(data, allocator) }
 	buf.line_starts, err = make([dynamic]int, allocator=allocator)
 	buf.data = data
-	buf.gap_end = len(data)
+	buf.gap_end = Offset(len(data))
 	buf.allocator = allocator
 
 	append(&buf.line_starts, 0)
@@ -51,26 +62,28 @@ buffer_pieces :: proc(buf: Gap_Buffer) -> (pre, post: []byte){
 
 // Get buffer's gap size
 gap_size :: #force_inline proc "contextless" (buf: Gap_Buffer) -> int {
-	return buf.gap_end - buf.gap_start
+	return int(buf.gap_end - buf.gap_start)
 }
 
 // Get buffer's text size (bytes)
 text_size :: #force_inline proc "contextless" (buf: Gap_Buffer) -> int {
-	return len(buf.data) - (buf.gap_end - buf.gap_start)
+	return len(buf.data) - int(buf.gap_end - buf.gap_start)
 }
 
 // Transform a logical byte offset into a internal buffer offset
-to_raw_position :: proc (buf: Gap_Buffer, p: int) -> int {
-	return p + (gap_size(buf) if p > buf.gap_start else 0)
+to_raw_position :: proc (buf: Gap_Buffer, p: Pos) -> Offset {
+	after := Offset(p) > buf.gap_start
+	return Offset(p + (gap_size(buf) if after else 0))
 }
 
 // Transform a internal buffer offset into a logical byte offset
-from_raw_position :: proc(buf: Gap_Buffer, r: int) -> int {
+from_raw_position :: proc(buf: Gap_Buffer, r: Offset) -> Pos {
 	assert(r < buf.gap_start || r >= buf.gap_end, "Cannot translate from middle of gap.")
-	return r - (gap_size(buf) if r < buf.gap_start else 0)
+	before := r < buf.gap_start
+	return Pos(r) - (gap_size(buf) if before else 0)
 }
 
-// Resize gap, moves it to the end
+// Resize gap, moves it to the end.
 gap_resize :: proc(buf: ^Gap_Buffer, size: int) -> (err: Buffer_Error) {
 	assert(size >= MIN_GAP, "Gap is too small")
 	pre, post := buffer_pieces(buf^)
@@ -83,8 +96,8 @@ gap_resize :: proc(buf: ^Gap_Buffer, size: int) -> (err: Buffer_Error) {
 
 	delete(buf.data, buf.allocator)
 
-	buf.gap_start = len(pre) + len(post)
-	buf.gap_end = len(new_data)
+	buf.gap_start = Offset(len(pre) + len(post))
+	buf.gap_end = Offset(len(new_data))
 	buf.data = new_data
 
 	return
@@ -97,7 +110,7 @@ insert_text :: proc {
 }
 
 // Update line offsets
-update_lines :: proc(buf: ^Gap_Buffer, start_pos: int){
+update_lines :: proc(buf: ^Gap_Buffer, start_pos: Pos){
 	clear(&buf.line_starts)
 	append(&buf.line_starts, 0)
 
@@ -105,42 +118,41 @@ update_lines :: proc(buf: ^Gap_Buffer, start_pos: int){
 
 	for i := 0; i < length; i += 1 {
 		if get_byte(buf^, i) == '\n' {
-			append(&buf.line_starts, to_raw_position(buf^, i))
+			append(&buf.line_starts, i)
 		}
 	}
 }
 
 // Get a byte at position
-get_byte :: proc (buf: Gap_Buffer, pos: int) -> byte {
+get_byte :: proc (buf: Gap_Buffer, pos: Pos) -> byte {
 	return buf.data[to_raw_position(buf, pos)]
 }
 
 // Insert a stream of raw bytes into position, this does *not* validate if the bytes are valid UTF-8
-insert_text_bytes :: proc(buf: ^Gap_Buffer, pos: int, text: []byte) -> (err: Buffer_Error) {
+insert_text_bytes :: proc(buf: ^Gap_Buffer, pos: Pos, text: []byte) -> (err: Buffer_Error) {
 	if len(text) >= gap_size(buf^) {
 		gap_resize(buf, len(text) + MIN_GAP) or_return
 	}
 	pos := to_raw_position(buf^, pos)
 	gap_move(buf, pos)
 	mem.copy(&buf.data[buf.gap_start], raw_data(text), len(text))
-	buf.gap_start += len(text)
-
+	buf.gap_start += Offset(len(text))
 	return
 }
 
 // Insert a string into position
-insert_text_string :: proc(buf: ^Gap_Buffer, pos: int, text: string) -> Buffer_Error {
+insert_text_string :: proc(buf: ^Gap_Buffer, pos: Pos, text: string) -> Buffer_Error {
 	return insert_text_bytes(buf, pos, transmute([]byte)text)
 }
 
 // Insert a UTF-8 encoded rune into position
-insert_rune :: proc(buf: ^Gap_Buffer, pos: int, r: rune) -> Buffer_Error {
+insert_rune :: proc(buf: ^Gap_Buffer, pos: Pos, r: rune) -> Buffer_Error {
 	b, n := utf8.encode_rune(r)
 	return insert_text_bytes(buf, pos, b[:n])
 }
 
-// Move the start of the gap to pos, note that pos is a raw offset in the buffer.
-gap_move :: proc(buf: ^Gap_Buffer, pos: int){
+// Move the start of the gap to position
+gap_move :: proc(buf: ^Gap_Buffer, pos: Offset){
 	if pos == buf.gap_start || pos < 0 { return }
 	region_to_save, region_freed : []byte
 	delta := pos - buf.gap_start
@@ -150,19 +162,19 @@ gap_move :: proc(buf: ^Gap_Buffer, pos: int){
 		region_freed   = buf.data[buf.gap_end + delta:buf.gap_end]
 	} else {
 		// If the delta causes the buffer's tail to overshoot, pull it back and proceed as normal
-		if buf.gap_end + delta > len(buf.data) {
-			delta = len(buf.data) - buf.gap_end
+		if buf.gap_end + delta > Offset(len(buf.data)) {
+			delta = Offset(len(buf.data)) - buf.gap_end
 		}
 		region_to_save = buf.data[buf.gap_end:buf.gap_end + delta]
 		region_freed   = buf.data[buf.gap_start:buf.gap_start + delta]
 	}
 
-	mem.copy(raw_data(region_freed), raw_data(region_to_save), abs(delta))
+	mem.copy(raw_data(region_freed), raw_data(region_to_save), auto_cast abs(delta))
 	buf.gap_start += delta
 	buf.gap_end += delta
 
-	assert(len(region_freed) == abs(delta) && len(region_to_save) == abs(delta))
-	assert(buf.gap_start < len(buf.data) && buf.gap_end <= len(buf.data))
+	assert(len(region_freed) == abs(int(delta)) && len(region_to_save) == abs(int(delta)))
+	assert(int(buf.gap_start) < len(buf.data) && int(buf.gap_end) <= len(buf.data))
 }
 
 // Creates a new string from buffer's contents. You can use append_null = true
@@ -185,4 +197,7 @@ buffer_build_string :: proc(
 	return
 }
 
+
+#assert(size_of(Buffer_Error) <= size_of(int))
+#assert(size_of(Pos) == size_of(Offset))
 
