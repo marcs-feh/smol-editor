@@ -21,18 +21,27 @@ main :: proc(){
 	buf, _ := buffer_make(MIN_GAP)
 	defer buffer_destroy(&buf)
 
+	insert_text(&buf, 0, "Hellope")
+	buffer_display(buf)
 
-	// insert_text(&buf, 0, "Hello")
-	// buffer_display(buf)
-	//
-	// insert_text(&buf, text_size(buf), " world")
-	// buffer_display(buf)
-	//
-	// insert_text(&buf, 5, ",")
-	// buffer_display(buf)
-	//
-	// insert_text(&buf, text_size(buf), "!")
-	// buffer_display(buf)
+	insert_text(&buf, text_size(buf), " world")
+	buffer_display(buf)
 
-	fmt.println(buffer_build_string(buf))
+	insert_text(&buf, 7, ",")
+	buffer_display(buf)
+
+	insert_text(&buf, text_size(buf), "!")
+	buffer_display(buf)
+
+	delete_text(&buf, 5, 2)
+	buffer_display(buf)
+
+	delete_text(&buf, text_size(buf) - 1, 1)
+	buffer_display(buf)
+
+	delete_text(&buf, 0, text_size(buf))
+	buffer_display(buf)
+
+
+	// fmt.println(buffer_build_string(buf))
 }

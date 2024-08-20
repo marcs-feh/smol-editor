@@ -1,5 +1,6 @@
 package gap_buffer
 
+import "base:intrinsics"
 import "core:fmt"
 import "core:mem"
 import "core:slice"
@@ -15,7 +16,6 @@ Pos :: int
 // usage or buffer memory manipulation
 Offset :: distinct int
 
-// TODO: OOB Checks?
 Buffer_Error :: union #shared_nil {
 	mem.Allocator_Error,
 	enum byte {
@@ -31,6 +31,16 @@ Gap_Buffer :: struct {
 	line_starts: [dynamic]Pos,
 
 	allocator: mem.Allocator,
+}
+
+// TODO allow option to disable checking
+@private
+buffer_bounds_check :: proc (#any_int low, val, hi: int) -> Buffer_Error {
+	low, val, hi := int(low), int(val), int(hi)
+	if val < low || val >= hi {
+		return .Out_Of_Bounds
+	}
+	return nil
 }
 
 // Create a gap buffer, the buffer will use the provided allocator for its own operations
@@ -71,7 +81,7 @@ text_size :: #force_inline proc "contextless" (buf: Gap_Buffer) -> int {
 }
 
 // Transform a logical byte offset into a internal buffer offset
-to_raw_position :: proc (buf: Gap_Buffer, p: Pos) -> Offset {
+to_raw_position :: proc "contextless" (buf: Gap_Buffer, p: Pos) -> Offset {
 	after := Offset(p) > buf.gap_start
 	return Offset(p + (gap_size(buf) if after else 0))
 }
@@ -123,13 +133,20 @@ update_lines :: proc(buf: ^Gap_Buffer, start_pos: Pos){
 	}
 }
 
-// Get a byte at position
-get_byte :: proc (buf: Gap_Buffer, pos: Pos) -> byte {
-	return buf.data[to_raw_position(buf, pos)]
+// Get a byte at position, this does not do any bounds checking in release mode
+get_byte :: proc "contextless" (buf: Gap_Buffer, pos: Pos) -> byte {
+	when ODIN_DEBUG {
+		b := buf.data[to_raw_position(buf, pos)]
+	} else {
+		#no_bounds_check b := buf.data[to_raw_position(buf, pos)]
+	}
+	return b
 }
 
 // Insert a stream of raw bytes into position, this does *not* validate if the bytes are valid UTF-8
 insert_text_bytes :: proc(buf: ^Gap_Buffer, pos: Pos, text: []byte) -> (err: Buffer_Error) {
+	buffer_bounds_check(0, pos, text_size(buf^)) or_return
+
 	if len(text) >= gap_size(buf^) {
 		gap_resize(buf, len(text) + MIN_GAP) or_return
 	}
@@ -151,9 +168,19 @@ insert_rune :: proc(buf: ^Gap_Buffer, pos: Pos, r: rune) -> Buffer_Error {
 	return insert_text_bytes(buf, pos, b[:n])
 }
 
-// Move the start of the gap to position
-gap_move :: proc(buf: ^Gap_Buffer, pos: Offset){
-	if pos == buf.gap_start || pos < 0 { return }
+// Delete n bytes after text position
+delete_text :: proc(buf: ^Gap_Buffer, pos: Pos, nbytes: int) -> (err: Buffer_Error) {
+	buffer_bounds_check(0, pos, text_size(buf^)) or_return
+
+	off := to_raw_position(buf^, pos + nbytes)
+	gap_move(buf, off)
+	buf.gap_start = max(0, buf.gap_start - Offset(nbytes))
+	return
+}
+
+// Move the start of the gap to position, does not do bounds checking.
+gap_move :: proc(buf: ^Gap_Buffer, pos: Offset) {
+	if pos == buf.gap_start { return }
 	region_to_save, region_freed : []byte
 	delta := pos - buf.gap_start
 
@@ -173,8 +200,7 @@ gap_move :: proc(buf: ^Gap_Buffer, pos: Offset){
 	buf.gap_start += delta
 	buf.gap_end += delta
 
-	assert(len(region_freed) == abs(int(delta)) && len(region_to_save) == abs(int(delta)))
-	assert(int(buf.gap_start) < len(buf.data) && int(buf.gap_end) <= len(buf.data))
+	return
 }
 
 // Creates a new string from buffer's contents. You can use append_null = true
@@ -196,7 +222,6 @@ buffer_build_string :: proc(
 	text = string(str_data)
 	return
 }
-
 
 #assert(size_of(Buffer_Error) <= size_of(int))
 #assert(size_of(Pos) == size_of(Offset))
