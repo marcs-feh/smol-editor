@@ -1,4 +1,4 @@
-package editor
+package input_queue
 
 import "base:builtin"
 
@@ -25,26 +25,28 @@ queue_make :: proc(buf: []rune) -> Input_Queue {
 	return queue
 }
 
-queue_push :: proc(q: ^Input_Queue, r: rune) -> bool {
+push :: proc(q: ^Input_Queue, r: rune) -> bool {
 	if q.length >= builtin.len(q.data) { return false }
 
 	// Fast mod
 	pos := (q.base + q.length) & (builtin.len(q.data) - 1)
 	q.data[pos] = r
+	q.length += 1
 	return true
 }
 
-queue_pop :: proc(q: ^Input_Queue) -> rune {
+pop :: proc(q: ^Input_Queue) -> rune {
 	if q.length == 0 { return 0; }
 
 	front := q.data[q.base]
 	// Fast mod
 	q.base = (q.base + 1) & (builtin.len(q.data) - 1) 
+	q.length -= 1
 	return front
 }
 
 len :: queue_len
 
-queue_len :: proc(q: ^Input_Queue) -> int {
+queue_len :: proc(q: Input_Queue) -> int {
 	return q.length
 }

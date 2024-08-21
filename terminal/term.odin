@@ -29,3 +29,4 @@ write_buffer :: proc(t: TermHandle, buf: ^strings.Builder){
 write_data :: proc(t: TermHandle, data: []byte) -> bool {
 	return _write_data(t, data)
 }
+
