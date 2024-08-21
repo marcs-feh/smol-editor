@@ -4,6 +4,7 @@ import "core:fmt"
 import "core:time"
 import str "core:strings"
 import term "terminal"
+import input "input_queue"
 
 @private
 term_handle := term.get_stdout_handle()
@@ -52,6 +53,10 @@ draw_statusbar :: proc(buffername: string, w, h: int){
 	if padding < 0 {
 		unimplemented("truncate")
 	}
+
+	term.set_background(tbuf, .Black)
+	term.set_foreground(tbuf, .Yellow)
+	defer term.reset_color(tbuf)
 
 	str.write_string(tbuf, left)
 	for i in 0..<padding {

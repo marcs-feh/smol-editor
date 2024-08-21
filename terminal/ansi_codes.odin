@@ -16,6 +16,23 @@ Color :: enum {
 	White   = 7,
 }
 
+set_foreground :: proc(buf: ^str.Builder, fg: Color, bold := false){
+	if bold {
+		fmt.sbprintf(buf, CSI + "1;3%dm", int(fg))
+	}
+	else {
+		fmt.sbprintf(buf, CSI + "3%dm", int(fg))
+	}
+}
+
+set_background :: proc(buf: ^str.Builder, fg: Color){
+	fmt.sbprintf(buf, CSI + "4%dm", int(fg))
+}
+
+reset_color :: proc(buf: ^str.Builder){
+	fmt.sbprintf(buf, CSI + "0m")
+}
+
 // The x,y coordinates are 0-indexed.
 set_cursor :: proc(buf: ^str.Builder, x, y: int){
 	fmt.sbprintf(buf, CSI + "%d;%dH", y + 1, x + 1)

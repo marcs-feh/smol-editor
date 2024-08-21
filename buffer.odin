@@ -4,6 +4,10 @@ import "core:fmt"
 import "core:strings"
 import gb "gap_buffer"
 
+Cursor :: struct {
+	pos: gb.Pos,
+}
+
 Buffer :: struct {
 	using gap_buf: gb.Gap_Buffer,
 	lines: [dynamic]int,
@@ -24,8 +28,25 @@ buffer_make :: proc(name: string, allocator := context.allocator) -> (buf: Buffe
 	return
 }
 
+// Destroy buffer
 buffer_destroy :: proc(buf: ^Buffer){
-	delete(buf.name)
+	delete(buf.name, buf.allocator)
 	gb.buffer_destroy(&buf.gap_buf)
 	delete(buf.lines)
+}
+
+// Update *ALL* lines
+buffer_update_lines :: proc(buf: ^Buffer){
+	clear(&buf.lines)
+	for i in 0..<gb.text_size(buf.gap_buf){
+		if gb.get_byte(buf^, i) == '\n' {
+			append(&buf.lines, i)
+		}
+	}
+}
+
+buffer_increase_line :: proc(buf: ^Buffer, start: int, delta: int){
+	for i in start..<gb.text_size(buf.gap_buf){
+		buf.lines[i] += delta
+	}
 }
