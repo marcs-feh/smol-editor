@@ -6,7 +6,7 @@ import "core:mem"
 import "core:slice"
 import "core:unicode/utf8"
 
-MIN_GAP :: 8
+MIN_GAP :: 32
 
 // Virtual byte position into a string, does not take into consideration the
 // gap, this is used for most of the Public functions
@@ -28,8 +28,6 @@ Gap_Buffer :: struct {
 	gap_start: Offset,
 	gap_end: Offset,
 
-	line_starts: [dynamic]Pos,
-
 	allocator: mem.Allocator,
 }
 
@@ -48,19 +46,16 @@ buffer_make :: proc(gap: int, allocator := context.allocator) -> (buf: Gap_Buffe
 	assert(gap >= MIN_GAP, "Gap is too small")
 	data := make([]byte, gap, allocator) or_return
 	defer if err != nil { delete(data, allocator) }
-	buf.line_starts, err = make([dynamic]int, allocator=allocator)
 	buf.data = data
 	buf.gap_end = Offset(len(data))
 	buf.allocator = allocator
 
-	append(&buf.line_starts, 0)
 	return
 }
 
 // Destroy buffer using its own allocator
 buffer_destroy :: proc(buf: ^Gap_Buffer){
 	delete(buf.data, buf.allocator)
-	delete(buf.line_starts)
 	buf.gap_end, buf.gap_end = 0, 0
 }
 
@@ -117,20 +112,6 @@ insert_text :: proc {
 	insert_text_bytes,
 	insert_text_string,
 	insert_rune,
-}
-
-// Update line offsets
-update_lines :: proc(buf: ^Gap_Buffer, start_pos: Pos){
-	clear(&buf.line_starts)
-	append(&buf.line_starts, 0)
-
-	length := text_size(buf^)
-
-	for i := 0; i < length; i += 1 {
-		if get_byte(buf^, i) == '\n' {
-			append(&buf.line_starts, i)
-		}
-	}
 }
 
 // Get a byte at position, this does not do any bounds checking in release mode
