@@ -52,6 +52,29 @@ basic_editing :: proc(t: ^ts.T){
 		expect(t, s == "Hellope 世界")
 	}
 
+	delete_text(&buf, text_size(buf) - 3, 3)
+	{
+		s, _ := buffer_build_string(buf, context.temp_allocator)
+		expect(t, s == "Hellope 世")
+	}
+
+	delete_text(&buf, 5, 2)
+	{
+		s, _ := buffer_build_string(buf, context.temp_allocator)
+		expect(t, s == "Hello 世")
+	}
+
+	delete_text(&buf, 0, 1)
+	{
+		s, _ := buffer_build_string(buf, context.temp_allocator)
+		expect(t, s == "ello 世")
+	}
+
+	delete_text(&buf, 0, text_size(buf))
+	{
+		s, _ := buffer_build_string(buf, context.temp_allocator)
+		expect(t, s == "")
+	}
 
 }
 
