@@ -2,6 +2,8 @@ package editor
 
 import "core:fmt"
 import "core:time"
+import "core:sync"
+import "core:unicode/utf8"
 import str "core:strings"
 import term "terminal"
 import input "input_queue"
@@ -21,8 +23,6 @@ get_terminal_buffer :: proc() -> ^str.Builder {
 
 	return &term_buffer
 }
-
-import "core:unicode/utf8"
 
 main :: proc(){
 	input_buf : [128]byte
