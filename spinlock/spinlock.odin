@@ -24,3 +24,4 @@ lock :: proc(l: ^Spinlock){
 unlock :: proc(l: ^Spinlock){
 	intrinsics.atomic_store_explicit(&l._locked, false, .Release)
 }
+

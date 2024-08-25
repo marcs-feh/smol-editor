@@ -1,4 +1,4 @@
-package editor
+package smol_editor
 
 import "core:fmt"
 import "core:strings"
@@ -67,8 +67,10 @@ buffer_update_lines :: proc(buf: ^Buffer){
 	}
 }
 
+// Increase line count from `start` onwards.
 buffer_increase_line :: proc(buf: ^Buffer, start: int, delta: int){
 	for i in start..<gb.text_size(buf.gap_buf){
 		buf.lines[i] += delta
 	}
 }
+
