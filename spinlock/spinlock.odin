@@ -25,3 +25,8 @@ unlock :: proc(l: ^Spinlock){
 	intrinsics.atomic_store_explicit(&l._locked, false, .Release)
 }
 
+@(deferred_in=unlock)
+lock_guard :: proc(l: ^Spinlock) -> bool {
+	lock(l)
+	return true
+}

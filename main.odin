@@ -30,7 +30,7 @@ main :: proc(){
 	defer term.disable_raw_mode(term_handle)
 
 	tbuf := get_terminal_buffer()
-	in_queue := input_queue_make(128)
+	in_queue, _ := input_queue_create(128)
 
 	for {
 		term.clear_screen(tbuf)
