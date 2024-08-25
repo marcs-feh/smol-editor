@@ -6,6 +6,7 @@ Spinlock :: struct #no_copy {
 	_locked: bool,
 }
 
+@(require)
 lock :: proc(l: ^Spinlock){
 	// TTAS: test and test-and-set. Due to how CPUs handle atomicity in their
 	// caches, this eliminates cache coherency traffic when the lock is
@@ -21,12 +22,20 @@ lock :: proc(l: ^Spinlock){
 	}
 }
 
+// import "core:fmt"
+// @(require)
+// lock :: proc(l: ^Spinlock){
+// 	for intrinsics.atomic_exchange_explicit(&l._locked, true, .Acquire) {
+// 	}
+// }
+
+@(require)
 unlock :: proc(l: ^Spinlock){
 	intrinsics.atomic_store_explicit(&l._locked, false, .Release)
 }
 
-@(deferred_in=unlock)
-lock_guard :: proc(l: ^Spinlock) -> bool {
+@(require, deferred_in=unlock)
+guard :: proc(l: ^Spinlock) -> bool {
 	lock(l)
 	return true
 }
