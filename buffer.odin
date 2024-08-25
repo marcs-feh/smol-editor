@@ -17,6 +17,28 @@ Buffer :: struct {
 @private
 DEFAULT_GAP :: 1024
 
+@private
+has_newline :: proc {
+	has_newline_bytes,
+	has_newline_string,
+}
+
+@private
+has_newline_bytes :: proc(bytes: []byte) -> bool {
+	for b in bytes {
+		if b == '\n' { return true }
+	}
+	return false
+}
+
+@private
+has_newline_string :: proc(s: string) -> bool {
+	return has_newline_bytes(transmute([]byte)s)
+}
+
+buffer_cursor_insert :: proc(buf: ^Buffer, data: []byte){
+}
+
 // Creates a buffer, note that the name is copied to the buffer, for safety reasons
 buffer_make :: proc(name: string, allocator := context.allocator) -> (buf: Buffer, err: gb.Buffer_Error){
 	defer if err != nil {
