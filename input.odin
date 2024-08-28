@@ -1,7 +1,41 @@
 package smol_editor
 
 import "core:mem"
+import str "core:strings"
 import sl "spinlock"
+
+KEYBINDINGS := map[string]string {
+	"#ctrl a" = "all",
+}
+
+UNICODE_MAX :: 0x10ffff
+
+CTRL  :: UNICODE_MAX + 0x10000_1
+ALT   :: UNICODE_MAX + 0x10000_2
+SUPER :: UNICODE_MAX + 0x10000_3
+
+consume_keys :: proc(queue: ^Input_Queue, batch: []rune, buf: ^str.Builder){
+	n := input_queue_pop_into(queue, batch)
+	keys := batch[:n]
+	encode_buf : [8]byte
+
+	for k in keys {
+		switch k {
+		case CTRL:
+			str.write_string(buf, "#ctrl ")
+		case ALT:
+			str.write_string(buf, "#alt ")
+		case SUPER:
+			str.write_string(buf, "#super ")
+		case:
+			str.write_encoded_rune(buf, k)
+		}
+	}
+}
+
+get_keyboard_input :: proc(queue: ^Input_Queue){
+	unimplemented()
+}
 
 Input_Queue :: struct {
 	items: []rune,
@@ -11,10 +45,6 @@ Input_Queue :: struct {
 	lock_: ^sl.Spinlock,
 }
 
-@(private="file")
-is_pow_of_2 :: #force_inline proc(n: int) -> bool {
-	return (n & (n - 1)) == 0
-}
 
 input_queue_create :: proc(cap: int, allocator := context.allocator) -> (q: Input_Queue, err: mem.Allocator_Error){
 	q.items = make([]rune, cap) or_return
@@ -28,6 +58,7 @@ input_queue_destroy :: proc(q: ^Input_Queue, allocator := context.allocator){
 	q.base, q.length, q.items = 0, 0, nil
 }
 
+@private
 _input_queue_push :: proc(q: ^Input_Queue, r: rune) -> bool {
 	if q.length >= len(q.items) {
 		return false
@@ -40,6 +71,7 @@ _input_queue_push :: proc(q: ^Input_Queue, r: rune) -> bool {
 	return true
 }
 
+@private
 _input_queue_pop :: proc(q: ^Input_Queue) -> (rune, bool) {
 	if q.length <= 0 {
 		return 0, false
@@ -89,4 +121,7 @@ input_queue_pop_into :: proc(q: ^Input_Queue, buf: []rune) -> (count: int) {
 }
 
 // TODO: Benchmark the powerof2 optimization
-
+// @(private="file")
+// is_pow_of_2 :: #force_inline proc(n: int) -> bool {
+// 	return (n & (n - 1)) == 0
+// }
