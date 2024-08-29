@@ -4,38 +4,11 @@ import "core:mem"
 import str "core:strings"
 import sl "spinlock"
 
-KEYBINDINGS := map[string]string {
-	"#ctrl a" = "all",
-}
-
 UNICODE_MAX :: 0x10ffff
 
 CTRL  :: UNICODE_MAX + 0x10000_1
 ALT   :: UNICODE_MAX + 0x10000_2
 SUPER :: UNICODE_MAX + 0x10000_3
-
-consume_keys :: proc(queue: ^Input_Queue, batch: []rune, buf: ^str.Builder){
-	n := input_queue_pop_into(queue, batch)
-	keys := batch[:n]
-	encode_buf : [8]byte
-
-	for k in keys {
-		switch k {
-		case CTRL:
-			str.write_string(buf, "#ctrl ")
-		case ALT:
-			str.write_string(buf, "#alt ")
-		case SUPER:
-			str.write_string(buf, "#super ")
-		case:
-			str.write_encoded_rune(buf, k)
-		}
-	}
-}
-
-get_keyboard_input :: proc(queue: ^Input_Queue){
-	unimplemented()
-}
 
 Input_Queue :: struct {
 	items: []rune,

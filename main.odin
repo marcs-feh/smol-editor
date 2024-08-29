@@ -15,8 +15,7 @@ get_terminal_buffer :: proc() -> ^str.Builder {
 	@static term_buffer : str.Builder
 	@static initialized := false
 
-	if !initialized {
-		str.builder_init(&term_buffer)
+	if !initialized { str.builder_init(&term_buffer)
 		initialized = true
 	}
 
@@ -51,6 +50,7 @@ draw_statusbar :: proc(buffername: string, w, h: int){
 	left := fmt.bprintf(left_buf[:], " %q", buffername)
 	right := fmt.bprintf(right_buf[:], "(123:12) | utf-8[unix]")
 	padding := w - (len(right) + len(left))
+
 	if padding < 0 {
 		unimplemented("truncate")
 	}

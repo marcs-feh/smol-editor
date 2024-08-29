@@ -9,9 +9,11 @@ Cursor :: struct {
 }
 
 Buffer :: struct {
+	id: Id,
 	using gap_buf: gb.Gap_Buffer,
 	lines: [dynamic]int,
 	name: string,
+	cursor: Cursor,
 }
 
 @private
@@ -34,9 +36,6 @@ has_newline_bytes :: proc(bytes: []byte) -> bool {
 @private
 has_newline_string :: proc(s: string) -> bool {
 	return has_newline_bytes(transmute([]byte)s)
-}
-
-buffer_cursor_insert :: proc(buf: ^Buffer, data: []byte){
 }
 
 // Creates a buffer, note that the name is copied to the buffer, for safety reasons
@@ -67,10 +66,19 @@ buffer_update_lines :: proc(buf: ^Buffer){
 	}
 }
 
-// Increase line count from `start` onwards.
+// Increase line offset from `start` onwards.
 buffer_increase_line :: proc(buf: ^Buffer, start: int, delta: int){
 	for i in start..<gb.text_size(buf.gap_buf){
 		buf.lines[i] += delta
 	}
 }
+
+// Insert rune at active cursor
+buffer_insert_rune :: proc(buf: ^Buffer, r: rune){
+	gb.insert_rune(buf, buf.cursor.pos, r)
+	if r == '\n' {
+		buffer_update_lines(buf) // TODO: Change this to not update whole buffer
+	}
+}
+
 
