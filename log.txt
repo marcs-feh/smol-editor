@@ -1,0 +1,3 @@
+[WARN ] --- [2024-08-30 23:06:02] [main.odin:48:main()] Initialized editor.
+[INFO ] --- [2024-08-30 23:06:02] [editor.odin:47:start_editor_workers()] Spawned input worker
+[INFO ] --- [2024-08-30 23:06:02] [main.odin:58:main()] Initialized editor.

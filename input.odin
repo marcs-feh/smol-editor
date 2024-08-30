@@ -18,10 +18,15 @@ Input_Queue :: struct {
 	lock_: ^sl.Spinlock,
 }
 
-
 input_queue_create :: proc(cap: int, allocator := context.allocator) -> (q: Input_Queue, err: mem.Allocator_Error){
-	q.items = make([]rune, cap) or_return
-	q.lock_ = transmute(^sl.Spinlock)new(struct {_: sl.Spinlock}) or_return
+	q.items = make([]rune, cap, allocator) or_return
+	q.lock_ = transmute(^sl.Spinlock)new(struct {_: sl.Spinlock}, allocator) or_return
+	return
+}
+
+input_queue_init :: proc(q: ^Input_Queue, data: []rune, lock: ^sl.Spinlock) -> (err: mem.Allocator_Error){
+	q.items = data
+	q.lock_ = lock
 	return
 }
 

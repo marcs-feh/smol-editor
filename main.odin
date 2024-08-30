@@ -1,8 +1,10 @@
 package smol_editor
 
+import "core:log"
 import "core:fmt"
 import "core:time"
 import "core:sync"
+import "core:os"
 import "core:unicode/utf8"
 import str "core:strings"
 import term "terminal"
@@ -22,19 +24,57 @@ get_terminal_buffer :: proc() -> ^str.Builder {
 	return &term_buffer
 }
 
+app_state : Editor_State
+
+@(private="file")
+global_input_queue : Input_Queue
+
 main :: proc(){
 	if ok := term.enable_raw_mode(term_handle); !ok {
-		fmt.panicf("Unable to set raw mode to terminal.")
+		log.fatalf("Unable to set raw mode to terminal.")
 	}
 	defer term.disable_raw_mode(term_handle)
 
-	tbuf := get_terminal_buffer()
-	in_queue, _ := input_queue_create(8)
+	logfile, file_err := os.open("log.txt", os.O_CREATE | os.O_RDWR, 0o644)
+	if file_err != nil {
+		fmt.eprintf("Failed to create log file.")
+	}
+	defer os.close(logfile)
+	defer os.rename("log.txt", "log.txt.old")
 
+	context.logger = log.create_file_logger(logfile, lowest = .Info)
+	defer log.destroy_file_logger(context.logger)
+
+	log.warn("Initialized editor.")
+
+	err := init_editor(&app_state, &global_input_queue)
+	assert(err == nil)
+
+	global_input_queue, err = input_queue_create(128)
+	assert(err == nil)
+
+	start_editor_workers(&app_state, )
+
+	log.info("Initialized editor.")
+	tmp_buf := make([dynamic]rune)
+
+	tbuf := get_terminal_buffer()
 	for {
 		term.clear_screen(tbuf)
 		w, h, _ := term.get_dimensions(term_handle)
 		draw_statusbar("hello.odin", w, h)
+
+
+		{
+			ibuf : [100]rune
+			n := input_queue_pop_into(app_state.input_queue, ibuf[:])
+			term.set_cursor(tbuf, 0, 2)
+			if n > 0 {
+				log.info(tmp_buf[:])
+				append(&tmp_buf, ..ibuf[:n])
+			}
+		}
+
 		term.set_cursor(tbuf, 0, 0)
 		term.write_buffer(term_handle, tbuf)
 		time.sleep(100 * time.Millisecond)

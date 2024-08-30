@@ -8,10 +8,14 @@ Cursor :: struct {
 	pos: gb.Pos,
 }
 
+Line :: struct {
+	length: i32,
+}
+
 Buffer :: struct {
 	id: Id,
 	using gap_buf: gb.Gap_Buffer,
-	lines: [dynamic]int,
+	lines: [dynamic]Line,
 	name: string,
 	cursor: Cursor,
 }
@@ -45,7 +49,6 @@ buffer_make :: proc(name: string, allocator := context.allocator) -> (buf: Buffe
 	}
 	buf.name = strings.clone(name) or_return
 	buf.gap_buf = gb.buffer_make(DEFAULT_GAP, allocator) or_return
-	buf.lines = make([dynamic]int) or_return
 	return
 }
 
@@ -53,32 +56,5 @@ buffer_make :: proc(name: string, allocator := context.allocator) -> (buf: Buffe
 buffer_destroy :: proc(buf: ^Buffer){
 	delete(buf.name, buf.allocator)
 	gb.buffer_destroy(&buf.gap_buf)
-	delete(buf.lines)
 }
-
-// Update *ALL* lines
-buffer_update_lines :: proc(buf: ^Buffer){
-	clear(&buf.lines)
-	for i in 0..<gb.text_size(buf.gap_buf){
-		if gb.get_byte(buf^, i) == '\n' {
-			append(&buf.lines, i)
-		}
-	}
-}
-
-// Increase line offset from `start` onwards.
-buffer_increase_line :: proc(buf: ^Buffer, start: int, delta: int){
-	for i in start..<gb.text_size(buf.gap_buf){
-		buf.lines[i] += delta
-	}
-}
-
-// Insert rune at active cursor
-buffer_insert_rune :: proc(buf: ^Buffer, r: rune){
-	gb.insert_rune(buf, buf.cursor.pos, r)
-	if r == '\n' {
-		buffer_update_lines(buf) // TODO: Change this to not update whole buffer
-	}
-}
-
 
