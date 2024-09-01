@@ -6,9 +6,12 @@ import sl "spinlock"
 
 UNICODE_MAX :: 0x10ffff
 
+// Modifier keys use codepoints well beyond unicode to avoid collision
 CTRL  :: UNICODE_MAX + 0x10000_1
 ALT   :: UNICODE_MAX + 0x10000_2
 SUPER :: UNICODE_MAX + 0x10000_3
+
+DELETE :: 0x1f
 
 Input_Queue :: struct {
 	items: []rune,
@@ -98,8 +101,3 @@ input_queue_pop_into :: proc(q: ^Input_Queue, buf: []rune) -> (count: int) {
 	return
 }
 
-// TODO: Benchmark the powerof2 optimization
-// @(private="file")
-// is_pow_of_2 :: #force_inline proc(n: int) -> bool {
-// 	return (n & (n - 1)) == 0
-// }

@@ -43,8 +43,11 @@ main :: proc(){
 
 	defer {
 		os.close(logfile)
-		os.remove("log.txt.old")
-		os.rename("log.txt", "log.old.txt")
+		_ = os.remove("log.txt.old")
+		e := os.rename("log.txt", "log.old.txt")
+		if e != nil {
+			log.fatal("Failed to create log file")
+		}
 	}
 
 	context.logger = log.create_file_logger(logfile, lowest = .Info)
@@ -69,12 +72,13 @@ main :: proc(){
 		w, h, _ := term.get_dimensions(term_handle)
 		draw_statusbar("hello.odin", w, h)
 
-
 		{
-			ibuf : [100]rune
-			n := input_queue_pop_into(app_state.input_queue, ibuf[:])
-			for r in ibuf[:n]{
-				if r == 'Q' { return }
+			ibuf : [256]rune
+			n := input_queue_pop_into(app_state.input_queue, ibuf[:len(ibuf) - 1])
+			for r, i in ibuf[:n]{
+				if r == CTRL && ibuf[i+1] == 'c' {
+					return
+				}
 			}
 			term.set_cursor(tbuf, 0, 2)
 			if n > 0 {
@@ -85,7 +89,7 @@ main :: proc(){
 
 		term.set_cursor(tbuf, 0, 0)
 		term.write_buffer(term_handle, tbuf)
-		time.sleep(100 * time.Millisecond)
+		time.sleep(16 * time.Millisecond)
 	}
 }
 

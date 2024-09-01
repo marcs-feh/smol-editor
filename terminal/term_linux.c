@@ -22,7 +22,7 @@ i32 term_enable_raw_mode(i32 fd){
 	err = tcgetattr(fd, &tio);
 	if(err < 0){ return err; }
 
-	tio.c_lflag &= ~(ECHO | ICANON | ISTRIP);
+	tio.c_lflag &= ~(ECHO | ICANON | ISTRIP | ISIG);
 	tio.c_iflag &= ~(IXON | IXOFF);
 
 	err = tcsetattr(fd, TCSAFLUSH, &tio);

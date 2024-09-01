@@ -9,8 +9,6 @@ import sl "spinlock"
 
 Id :: distinct i32
 
-INPUT_READ_INTERVAL :: 4 * time.Millisecond
-
 Editor_State :: struct {
 	buffers: [dynamic]Buffer,  // Buffers are the internal representation of editable text
 	views: [dynamic]Text_View, // A view is some metadata on how a buffer is rendered
@@ -53,7 +51,6 @@ input_worker_proc :: proc(thread_state: ^thread.Thread){
 
 	for intrinsics.atomic_load_explicit(&editor_state.running, .Relaxed) {
 		_query_input(queue)
-		time.sleep(INPUT_READ_INTERVAL)
 	}
 }
 // TODO: spawn worker etc.
