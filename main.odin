@@ -6,6 +6,7 @@ import "core:time"
 import "core:sync"
 import "core:os"
 import "core:unicode/utf8"
+import "core:sys/linux"
 import str "core:strings"
 import term "terminal"
 
@@ -39,8 +40,12 @@ main :: proc(){
 	if file_err != nil {
 		fmt.eprintf("Failed to create log file.")
 	}
-	defer os.close(logfile)
-	defer os.rename("log.txt", "log.txt.old")
+
+	defer {
+		os.close(logfile)
+		os.remove("log.txt.old")
+		os.rename("log.txt", "log.old.txt")
+	}
 
 	context.logger = log.create_file_logger(logfile, lowest = .Info)
 	defer log.destroy_file_logger(context.logger)
@@ -68,6 +73,9 @@ main :: proc(){
 		{
 			ibuf : [100]rune
 			n := input_queue_pop_into(app_state.input_queue, ibuf[:])
+			for r in ibuf[:n]{
+				if r == 'Q' { return }
+			}
 			term.set_cursor(tbuf, 0, 2)
 			if n > 0 {
 				log.info(tmp_buf[:])

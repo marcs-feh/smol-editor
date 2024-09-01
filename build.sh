@@ -5,6 +5,6 @@ cflags='-O2 -fPIE -fno-strict-aliasing'
 
 set -xe
 
-$cc $cflags -c terminal/tty_linux.c -o terminal/tty_linux.o
+$cc $cflags -c terminal/term_linux.c -o terminal/term_linux.o
 odin build .
 

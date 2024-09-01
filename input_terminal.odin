@@ -27,3 +27,4 @@ _query_input :: proc(queue: ^Input_Queue){
 
 	input_queue_push_from(queue, rune_buf[:rune_count])
 }
+

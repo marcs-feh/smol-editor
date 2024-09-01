@@ -7,3 +7,5 @@ Containerfile
 __pycache__
 smol-editor
 gap_buffer/gap_buffer
+log.txt
+log.old.txt

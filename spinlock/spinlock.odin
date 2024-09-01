@@ -13,7 +13,7 @@ lock :: proc(l: ^Spinlock){
 	// spinning.
 	for {
 		if !intrinsics.atomic_exchange_explicit(&l._locked, true, .Acquire) {
-			break;
+			break
 		}
 
 		for intrinsics.atomic_load_explicit(&l._locked, .Relaxed) {
