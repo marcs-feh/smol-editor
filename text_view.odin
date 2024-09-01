@@ -1,6 +1,8 @@
 package smol_editor
 
 Text_View :: struct {
-	id: Id,
+	line_start: int,
+	line_count: int,
+	x_offset: int,
 }
 

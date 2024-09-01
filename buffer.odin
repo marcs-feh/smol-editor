@@ -16,7 +16,7 @@ Buffer :: struct {
 	id: Id,
 	using gap_buf: gb.Gap_Buffer,
 	lines: [dynamic]Line,
-	name: string,
+	filename: string,
 	cursor: Cursor,
 }
 
@@ -47,14 +47,14 @@ buffer_make :: proc(name: string, allocator := context.allocator) -> (buf: Buffe
 	defer if err != nil {
 		buffer_destroy(&buf)
 	}
-	buf.name = strings.clone(name) or_return
+	buf.filename = strings.clone(name) or_return
 	buf.gap_buf = gb.buffer_make(DEFAULT_GAP, allocator) or_return
 	return
 }
 
 // Destroy buffer
 buffer_destroy :: proc(buf: ^Buffer){
-	delete(buf.name, buf.allocator)
+	delete(buf.filename, buf.allocator)
 	gb.buffer_destroy(&buf.gap_buf)
 }
 

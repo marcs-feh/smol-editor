@@ -41,7 +41,7 @@ main :: proc(){
 		fmt.eprintf("Failed to create log file.")
 	}
 
-	defer {
+	defer commit_logfile: {
 		os.close(logfile)
 		_ = os.remove("log.txt.old")
 		e := os.rename("log.txt", "log.old.txt")
@@ -53,7 +53,7 @@ main :: proc(){
 	context.logger = log.create_file_logger(logfile, lowest = .Info)
 	defer log.destroy_file_logger(context.logger)
 
-	log.warn("Initialized editor.")
+	log.info("Initialized editor.")
 
 	err := init_editor(&app_state, &global_input_queue)
 	assert(err == nil)
