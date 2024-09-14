@@ -11,7 +11,6 @@ Id :: distinct i32
 
 Editor_State :: struct {
 	buffers: [dynamic]Buffer,  // Buffers are the internal representation of editable text
-	views: [dynamic]Text_View, // A view is some metadata on how a buffer is rendered
 
 	input_queue: ^Input_Queue, // Global input queue
 	active_buffer: Id,
@@ -25,7 +24,6 @@ Editor_State :: struct {
 // multiple threads.
 init_editor :: proc(editor: ^Editor_State, queue: ^Input_Queue) -> (err: mem.Allocator_Error){
 	editor.buffers = make([dynamic]Buffer) or_return
-	editor.views = make([dynamic]Text_View) or_return
 	editor.input_queue = queue
 
 	lock := cast(^sl.Spinlock)new(struct {_:sl.Spinlock})

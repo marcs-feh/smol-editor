@@ -8,14 +8,12 @@ Cursor :: struct {
 	pos: gb.Pos,
 }
 
-Line :: struct {
-	length: i32,
-}
-
 Buffer :: struct {
 	id: Id,
-	using gap_buf: gb.Gap_Buffer,
-	lines: [dynamic]Line,
+
+	gap_buf: gb.Gap_Buffer,
+	line_starts: [dynamic]gb.Pos,
+
 	filename: string,
 	cursor: Cursor,
 }
@@ -54,7 +52,7 @@ buffer_make :: proc(name: string, allocator := context.allocator) -> (buf: Buffe
 
 // Destroy buffer
 buffer_destroy :: proc(buf: ^Buffer){
-	delete(buf.filename, buf.allocator)
+	delete(buf.filename, buf.gap_buf.allocator)
 	gb.buffer_destroy(&buf.gap_buf)
 }
 

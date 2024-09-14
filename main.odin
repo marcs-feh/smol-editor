@@ -53,15 +53,13 @@ main :: proc(){
 	context.logger = log.create_file_logger(logfile, lowest = .Info)
 	defer log.destroy_file_logger(context.logger)
 
-	log.info("Initialized editor.")
-
 	err := init_editor(&app_state, &global_input_queue)
 	assert(err == nil)
 
 	global_input_queue, err = input_queue_create(128)
 	assert(err == nil)
 
-	start_editor_workers(&app_state, )
+	start_editor_workers(&app_state)
 
 	log.info("Initialized editor.")
 	tmp_buf := make([dynamic]rune)
